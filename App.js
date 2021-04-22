@@ -8,7 +8,68 @@ import {
   View,
 } from 'react-native';
 import {HomeScreen} from './src/HomeScreen';
+import {withAuthenticator, AmplifyTheme} from 'aws-amplify-react-native';
+import {Auth} from 'aws-amplify';
+
+/**
+ * Custom theme
+ * @type {*&{button: {[p: string]: *}}}
+ */
+const myTheme = {
+  ...AmplifyTheme,
+  button: {
+    ...AmplifyTheme.button,
+    backgroundColor: '#213152',
+    borderRadius: 5,
+  },
+};
+/**
+ * Hide some fields
+ * @type {{signUpFields: [{displayOrder: number, label: string, placeholder: string, type: string, key: string, required: boolean}], defaultCountryCode: string, hiddenDefaults: string[]}}
+ */
+const signUpConfig = {
+  // header:'',
+  signUpFields: [
+    {
+      label: 'Name',
+      key: 'name',
+      required: true,
+      placeholder: 'Your name',
+      type: 'string',
+      displayOrder: 2,
+    },
+  ],
+  defaultCountryCode: '254',
+  hiddenDefaults: ['phone_number', 'username'],
+};
+const authConfig = {
+  signUpConfig: signUpConfig,
+  usernameAttributes: 'email',
+  // theme: myTheme,
+};
 class App extends React.Component {
+  state = {
+    user: null,
+  };
+  componentDidMount() {
+    Auth.currentUserInfo()
+      .then(user => {
+        console.log(user);
+        this.setState({user: user});
+      })
+      .catch(error => {
+        console.log('error');
+      });
+  }
+  handleLogout = () => {
+    Auth.signOut()
+      .then(r => {
+        //do nothing
+      })
+      .catch(err => {
+        //handle sign out error
+      });
+  };
   render() {
     return (
       <SafeAreaView style={styles.container}>
@@ -21,12 +82,15 @@ class App extends React.Component {
         />
         <View style={styles.toolBar}>
           <View>
-            <Text style={styles.salutation}>Hey name,</Text>
+            <Text style={styles.salutation}>
+              Hey {this.state.user ? this.state.user.attributes.name : ''},
+            </Text>
             <Text style={styles.message}>adopt a pet near you!</Text>
           </View>
           <TouchableOpacity
             onPress={() => {
               //todo logout
+              this.handleLogout();
             }}>
             <Text style={styles.logout}>LOGOUT</Text>
           </TouchableOpacity>
@@ -39,6 +103,7 @@ class App extends React.Component {
   }
 }
 
+export default withAuthenticator(App, authConfig);
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -78,5 +143,3 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
 });
-
-export default App;
